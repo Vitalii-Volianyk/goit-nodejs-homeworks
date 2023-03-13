@@ -51,5 +51,12 @@ const dataValidation = (body, strict = true) => {
 	}
 	return schema.validate(body);
 };
+const validateFavorite = favorite => {
+	const schema = Joi.object({
+		favorite: Joi.boolean().required(),
+	});
+	const { error, value } = schema.validate(favorite);
+	return { error, value };
+};
 
-module.exports = dataValidation;
+module.exports = { dataValidation, validateFavorite };

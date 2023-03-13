@@ -1,5 +1,5 @@
 const db = require("../service/db");
-const { catchAsync, dataValidation } = require("../utils");
+const { catchAsync, dataValidation, validateFavorite } = require("../utils");
 /**
  *@param {Object} req
  *@param {Object} res
@@ -64,6 +64,19 @@ const updateContact = catchAsync(async (req, res, next) => {
 	const updatedContact = await db.updateContacts(req.params.contactId, value);
 	res.status(202).json(updatedContact);
 });
+/**
+ * @description update contact favorite field
+ *@param {Object} req
+ *@param {Object} res
+ */
+const updateStatusContact = catchAsync(async (req, res, next) => {
+	const { error, value } = validateFavorite(req.body);
+	if (error) {
+		return res.status(400).json({ message: error.message });
+	}
+	const updatedContact = await db.updateContacts(req.params.contactId, value);
+	res.status(202).json({ favorite: updatedContact?.favorite });
+});
 
 module.exports = {
 	listContacts,
@@ -71,4 +84,5 @@ module.exports = {
 	removeContact,
 	addContact,
 	updateContact,
+	updateStatusContact,
 };

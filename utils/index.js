@@ -1,7 +1,8 @@
 const catchAsync = require("./catchAsync");
-const dataValidation = require("./validation");
+const { dataValidation, validateFavorite } = require("./validation");
 
 module.exports = {
 	catchAsync,
 	dataValidation,
+	validateFavorite,
 };

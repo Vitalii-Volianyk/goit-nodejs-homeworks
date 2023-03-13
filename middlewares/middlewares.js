@@ -9,9 +9,9 @@ const validateId = cathcAsync(async (req, res, next) => {
 	if (!ObjectId.isValid(contactId)) {
 		return res.status(400).json({ message: "Invalid id" });
 	}
-	const userExists = await Contacts.exists({ _id: contactId });
-	if (!userExists) {
-		return res.status(404).json({ message: "Not found" });
+	const contactExists = await Contacts.exists({ _id: contactId });
+	if (!contactExists) {
+		return res.status(404).json({ message: "Not found contact" });
 	}
 	next();
 });
