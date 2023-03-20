@@ -1,4 +1,5 @@
-const db = require("../service/contacts");
+const bcrypt = require("bcryptjs");
+const db = require("../service/users");
 const { catchAsync, dataValidation, validateFavorite } = require("../utils");
 /**
  *@param {Object} req
@@ -6,7 +7,7 @@ const { catchAsync, dataValidation, validateFavorite } = require("../utils");
  * @description get all contacts from database
  */
 const listContacts = catchAsync(async (req, res, next) => {
-	const contacts = await db.getAllContacts();
+	const contacts = await db.getAllUsers();
 	if (contacts.length > 0) {
 		res.json(contacts);
 	} else {
@@ -22,7 +23,7 @@ const listContacts = catchAsync(async (req, res, next) => {
  *@param {Object} res
  */
 const getContactById = catchAsync(async (req, res, next) => {
-	const contact = await db.getContactsById(req.params.contactId);
+	const contact = await db.getUsersById(req.params.contactId);
 	res.json(contact);
 });
 
@@ -32,7 +33,7 @@ const getContactById = catchAsync(async (req, res, next) => {
  *@param {Object} res
  */
 const removeContact = catchAsync(async (req, res, next) => {
-	await db.removeContacts(req.params.contactId);
+	await db.removeUsers(req.params.contactId);
 	res.status(204).json();
 });
 
@@ -46,8 +47,8 @@ const addContact = catchAsync(async (req, res, next) => {
 	if (error) {
 		return res.status(400).json({ message: error.message });
 	}
-	const newContact = await db.createContacts(value);
-
+	const newContact = await db.createUsers(value);
+	var hash = bcrypt.hashSync("bacon", 8);
 	res.status(201).json(newContact);
 });
 
@@ -61,7 +62,7 @@ const updateContact = catchAsync(async (req, res, next) => {
 	if (error) {
 		return res.status(400).json({ message: error.message });
 	}
-	const updatedContact = await db.updateContacts(req.params.contactId, value);
+	const updatedContact = await db.updateUsers(req.params.contactId, value);
 	res.status(202).json(updatedContact);
 });
 /**
@@ -74,7 +75,7 @@ const updateStatusContact = catchAsync(async (req, res, next) => {
 	if (error) {
 		return res.status(400).json({ message: error.message });
 	}
-	const updatedContact = await db.updateContacts(req.params.contactId, value);
+	const updatedContact = await db.updateUsers(req.params.contactId, value);
 	res.status(202).json({ favorite: updatedContact?.favorite });
 });
 
