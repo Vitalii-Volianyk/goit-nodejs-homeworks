@@ -1,89 +1,133 @@
+const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-const db = require("../service/users");
-const { catchAsync, dataValidation, validateFavorite } = require("../utils");
+const Users = require("../schemas/users");
+const { USER_SUBSCRIPTION_ENUM } = require("../utils");
+const { catchAsync } = require("../utils");
+
+// Sign jwt helper function
+const signToken = id =>
+	jwt.sign({ id }, process.env.JWT_SECRET, {
+		expiresIn: process.env.JWT_EXPIRES_IN,
+	});
+
 /**
  *@param {Object} req
  *@param {Object} res
- * @description get all contacts from database
+ * @description Signup controller
  */
-const listContacts = catchAsync(async (req, res, next) => {
-	const contacts = await db.getAllUsers();
-	if (contacts.length > 0) {
-		res.json(contacts);
-	} else {
-		res.status(404).json({
-			message: "Not found contacts",
-		});
-	}
+const signup = catchAsync(async (req, res) => {
+	const newUserData = {
+		...req.body,
+		role: USER_SUBSCRIPTION_ENUM.STARTER,
+	};
+
+	const isExist = await Users.findOne({ email: newUserData.email });
+	if (isExist) return res.status(409).json({ message: "Email in use" });
+
+	newUserData.password = bcrypt.hashSync(newUserData.password, 10);
+	const newUser = await Users.create(newUserData);
+
+	const token = signToken(newUser.id);
+	newUser.token = token;
+	newUser.save();
+
+	res.status(201).json({
+		user: { email: newUser.email, subscription: newUser.subscription },
+		token,
+	});
 });
 
 /**
- * @description get contact by id from database
  *@param {Object} req
  *@param {Object} res
+ * @description Login controller
  */
-const getContactById = catchAsync(async (req, res, next) => {
-	const contact = await db.getUsersById(req.params.contactId);
-	res.json(contact);
+const login = catchAsync(async (req, res, next) => {
+	const { email, password } = req.body;
+
+	const user = await Users.findOne({ email }).select("+password");
+
+	if (!user)
+		return res.status(401).json({ message: "Email or password is wrong" });
+
+	const passwordIsValid = bcrypt.compareSync(password, user.password);
+
+	if (!passwordIsValid)
+		return res.status(401).json({ message: "Email or password is wrong" });
+
+	const token = signToken(user.id);
+	user.token = token;
+	user.save();
+	res.status(200).json({
+		user: { email: user.email, subscription: user.subscription },
+		token,
+	});
 });
 
 /**
- * @description remove contact from database
  *@param {Object} req
  *@param {Object} res
+ * @description Logout controller
  */
-const removeContact = catchAsync(async (req, res, next) => {
-	await db.removeUsers(req.params.contactId);
-	res.status(204).json();
+const logout = catchAsync(async (req, res, next) => {
+	const { user: _id } = req;
+
+	const user = await Users.findById(_id).select("+token");
+
+	if (!user) return res.status(401).json({ message: "Not authorized" });
+
+	user.token = null;
+	await user.save();
+
+	res.status(204).json({
+		message: "No content",
+	});
 });
 
 /**
- * @description add new contact to database
  *@param {Object} req
  *@param {Object} res
+ * @description Current user controller
  */
-const addContact = catchAsync(async (req, res, next) => {
-	const { error, value } = dataValidation(req.body);
-	if (error) {
-		return res.status(400).json({ message: error.message });
-	}
-	const newContact = await db.createUsers(value);
-	var hash = bcrypt.hashSync("bacon", 8);
-	res.status(201).json(newContact);
+const getUser = catchAsync(async (req, res, next) => {
+	const { user: _id } = req;
+
+	const user = await Users.findById(_id);
+
+	if (!user) return res.status(401).json({ message: "Not authorized" });
+
+	res.json({
+		email: user.email,
+		subscription: user.subscription,
+	});
 });
 
 /**
- * @description add new contact to database
  *@param {Object} req
  *@param {Object} res
+ *@description Update subscription controller
  */
-const updateContact = catchAsync(async (req, res, next) => {
-	const { error, value } = dataValidation(req.body, false);
-	if (error) {
-		return res.status(400).json({ message: error.message });
-	}
-	const updatedContact = await db.updateUsers(req.params.contactId, value);
-	res.status(202).json(updatedContact);
-});
-/**
- * @description update contact favorite field
- *@param {Object} req
- *@param {Object} res
- */
-const updateStatusContact = catchAsync(async (req, res, next) => {
-	const { error, value } = validateFavorite(req.body);
-	if (error) {
-		return res.status(400).json({ message: error.message });
-	}
-	const updatedContact = await db.updateUsers(req.params.contactId, value);
-	res.status(202).json({ favorite: updatedContact?.favorite });
+const updateSubscription = catchAsync(async (req, res, next) => {
+	const { user: _id } = req;
+	const { subscription } = req.body;
+
+	const user = await Users.findById(_id);
+
+	if (!user) return res.status(401).json({ message: "Not authorized" });
+
+	user.subscription = subscription;
+	await user.save();
+
+	res.status(202).json({
+		email: user.email,
+		subscription: user.subscription,
+	});
 });
 
 module.exports = {
-	listContacts,
-	getContactById,
-	removeContact,
-	addContact,
-	updateContact,
-	updateStatusContact,
+	signup,
+	login,
+	logout,
+	getUser,
+	updateSubscription,
 };

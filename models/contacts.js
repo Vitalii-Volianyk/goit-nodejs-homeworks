@@ -6,7 +6,21 @@ const { catchAsync, dataValidation, validateFavorite } = require("../utils");
  * @description get all contacts from database
  */
 const listContacts = catchAsync(async (req, res, next) => {
-	const contacts = await db.getAllContacts();
+	const { _id } = req.user;
+	const { favorite, page, limit } = req.query;
+
+	const contacts = await db.getAllContacts(
+		favorite
+			? {
+					owner: _id,
+					favorite,
+			  }
+			: {
+					owner: _id,
+			  },
+		page,
+		limit
+	);
 	if (contacts.length > 0) {
 		res.json(contacts);
 	} else {
@@ -23,6 +37,7 @@ const listContacts = catchAsync(async (req, res, next) => {
  */
 const getContactById = catchAsync(async (req, res, next) => {
 	const contact = await db.getContactsById(req.params.contactId);
+
 	res.json(contact);
 });
 
@@ -42,7 +57,10 @@ const removeContact = catchAsync(async (req, res, next) => {
  *@param {Object} res
  */
 const addContact = catchAsync(async (req, res, next) => {
-	const { error, value } = dataValidation(req.body);
+	const { error, value } = dataValidation({
+		...req.body,
+		owner: req.user._id.toString(),
+	});
 	if (error) {
 		return res.status(400).json({ message: error.message });
 	}

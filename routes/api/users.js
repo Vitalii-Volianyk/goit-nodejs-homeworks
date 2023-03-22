@@ -1,27 +1,28 @@
 const express = require("express");
 
 const {
-	listContacts,
-	getContactById,
-	addContact,
+	signup,
+	login,
+	logout,
+	getUser,
+	updateSubscription,
 } = require("../../models/users");
 
-// const validateId = require("../../middlewares/middlewares");
+const {
+	validateUserData,
+	protectPath,
+} = require("../../middlewares/middlewares");
 
 const router = express.Router();
 
-router.post("/register", listContacts);
+router.post("/register", validateUserData, signup);
 
-router.post("/login", addContact);
+router.post("/login", validateUserData, login);
 
-router.post("/logout", getContactById);
+router.post("/logout", protectPath, logout);
 
-// router.use("/:contactId", validateId);
+router.post("/current", protectPath, getUser);
 
-// router.delete("/:contactId", removeContact);
-
-// router.put("/:contactId", updateContact);
-
-// router.patch("/:contactId/favorite", updateStatusContact);
+router.patch("/", protectPath, updateSubscription);
 
 module.exports = router;

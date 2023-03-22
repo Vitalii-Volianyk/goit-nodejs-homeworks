@@ -8,8 +8,12 @@ const {
 	updateContact,
 	updateStatusContact,
 } = require("../../models/contacts");
-const validateId = require("../../middlewares/middlewares");
+const { validateId } = require("../../middlewares/middlewares");
+const { protectPath } = require("../../middlewares/middlewares");
+
 const router = express.Router();
+
+router.use(protectPath);
 
 router.get("/", listContacts);
 
