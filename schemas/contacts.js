@@ -12,7 +12,7 @@ const contacts = new Schema(
 			type: String,
 			minlength: 3,
 			maxlength: 170,
-			unqiue: true,
+			unique: true,
 			lowercase: true,
 			required: [true, "Set email for contact"],
 		},
@@ -25,6 +25,10 @@ const contacts = new Schema(
 		favorite: {
 			type: Boolean,
 			default: false,
+		},
+		owner: {
+			type: Schema.Types.ObjectId,
+			ref: "users",
 		},
 	},
 	{ versionKey: false, timestamps: true }
