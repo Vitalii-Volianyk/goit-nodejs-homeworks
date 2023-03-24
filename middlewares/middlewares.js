@@ -12,15 +12,13 @@ const validateId = cathcAsync(async (req, res, next) => {
 	if (!ObjectId.isValid(contactId)) {
 		return res.status(400).json({ message: "Invalid id" });
 	}
-	const contact = await Contacts.findById(contactId);
+	const contact = await Contacts.findById({
+		_id: contactId,
+		owner: req.user._id,
+	});
 	if (!contact) {
 		return res.status(404).json({
 			message: "Not found contact",
-		});
-	}
-	if (contact.owner?.toString() !== req.user._id.toString()) {
-		return res.status(401).json({
-			message: "No access",
 		});
 	}
 	next();
