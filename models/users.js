@@ -1,8 +1,11 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-const Users = require("../schemas/users");
-const { USER_SUBSCRIPTION_ENUM } = require("../utils");
+const gravatar = require("gravatar");
+const jimp = require("jimp");
+const fs = require("fs").promises;
 const { catchAsync } = require("../utils");
+const { USER_SUBSCRIPTION_ENUM } = require("../utils");
+const Users = require("../schemas/users");
 
 // Sign jwt helper function
 const signToken = id =>
@@ -11,14 +14,18 @@ const signToken = id =>
 	});
 
 /**
- *@param {Object} req
- *@param {Object} res
+ *@param {Object} request
+ *@param {Object} response
  * @description Signup controller
  */
 const signup = catchAsync(async (req, res) => {
 	const newUserData = {
 		...req.body,
 		role: USER_SUBSCRIPTION_ENUM.STARTER,
+		avatarURL: gravatar.url(req.body.email, {
+			protocol: "https",
+			s: "250",
+		}),
 	};
 
 	const isExist = await Users.findOne({ email: newUserData.email });
@@ -32,7 +39,11 @@ const signup = catchAsync(async (req, res) => {
 	newUser.save();
 
 	res.status(201).json({
-		user: { email: newUser.email, subscription: newUser.subscription },
+		user: {
+			email: newUser.email,
+			subscription: newUser.subscription,
+			avatarURL: newUser.avatarURL,
+		},
 		token,
 	});
 });
@@ -105,6 +116,25 @@ const getUser = catchAsync(async (req, res, next) => {
 /**
  *@param {Object} req
  *@param {Object} res
+ * @description Avatar upload controller
+ */
+const apdateUserAvatar = catchAsync(async (req, res, next) => {
+	const { user, tmpFile } = req;
+	const image = await jimp.read(tmpFile);
+	await image.resize(250, 250).quality(90);
+	const name = `avatars/user-${Date.now()}.png`;
+	await image.writeAsync(`public/${name}`);
+	user.avatarURL = name;
+	await user.save();
+	fs.rm(tmpFile);
+
+	res.status(201).json({
+		message: "Avatar uploaded",
+	});
+});
+/**
+ *@param {Object} req
+ *@param {Object} res
  *@description Update subscription controller
  */
 const updateSubscription = catchAsync(async (req, res, next) => {
@@ -130,4 +160,5 @@ module.exports = {
 	logout,
 	getUser,
 	updateSubscription,
+	apdateUserAvatar,
 };
