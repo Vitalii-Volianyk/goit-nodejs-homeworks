@@ -6,7 +6,9 @@ const {
 	logout,
 	getUser,
 	updateSubscription,
+	apdateUserAvatar,
 } = require("../../models/users");
+const { uploadAvatar } = require("../../service/images");
 
 const {
 	validateUserData,
@@ -22,6 +24,13 @@ router.post("/login", validateUserData, login);
 router.post("/logout", protectPath, logout);
 
 router.post("/current", protectPath, getUser);
+
+router.patch(
+	"/avatars",
+	protectPath,
+	uploadAvatar.single("avatar"),
+	apdateUserAvatar
+);
 
 router.patch("/", protectPath, updateSubscription);
 
