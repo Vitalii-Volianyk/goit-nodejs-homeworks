@@ -3,7 +3,8 @@ const bcrypt = require("bcryptjs");
 const gravatar = require("gravatar");
 const jimp = require("jimp");
 const fs = require("fs").promises;
-const { catchAsync } = require("../utils");
+const { u4 } = require("uuid");
+const { catchAsync, sendEmail } = require("../utils");
 const { USER_SUBSCRIPTION_ENUM } = require("../utils");
 const Users = require("../schemas/users");
 
@@ -26,6 +27,7 @@ const signup = catchAsync(async (req, res) => {
 			protocol: "https",
 			s: "250",
 		}),
+		verificationToken: u4(),
 	};
 
 	const isExist = await Users.findOne({ email: newUserData.email });
@@ -37,6 +39,14 @@ const signup = catchAsync(async (req, res) => {
 	const token = signToken(newUser.id);
 	newUser.token = token;
 	newUser.save();
+
+	const msg = {
+		to: newUser.email,
+		from: "goithw@meta.ua",
+		subject: "Activate user",
+		html: `<p>For verify your email click on link</p><a href="${newUser.verificationToken}" target="blank">${newUser.verificationToken}</>`,
+	};
+	sendEmail(msg);
 
 	res.status(201).json({
 		user: {
@@ -65,6 +75,11 @@ const login = catchAsync(async (req, res, next) => {
 
 	if (!passwordIsValid)
 		return res.status(401).json({ message: "Email or password is wrong" });
+
+	if (!user.verify)
+		return res
+			.status(400)
+			.json({ message: "Verification has not been passed" });
 
 	const token = signToken(user.id);
 	user.token = token;
@@ -154,6 +169,20 @@ const updateSubscription = catchAsync(async (req, res, next) => {
 	});
 });
 
+const verify = catchAsync(async (req, res, next) => {
+	const verificationToken = req.param.verificationToken;
+	const user = await Users.findById(verificationToken);
+
+	if (!user) return res.status(404).json({ message: "Not found" });
+	user.verificationToken = null;
+	user.verify = true;
+	await user.save();
+
+	res.json({
+		message: "Verification successful",
+	});
+});
+
 module.exports = {
 	signup,
 	login,
@@ -161,4 +190,5 @@ module.exports = {
 	getUser,
 	updateSubscription,
 	apdateUserAvatar,
+	verify,
 };

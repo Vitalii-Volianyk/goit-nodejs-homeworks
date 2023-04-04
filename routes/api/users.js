@@ -7,6 +7,7 @@ const {
 	getUser,
 	updateSubscription,
 	apdateUserAvatar,
+	verify,
 } = require("../../models/users");
 const { uploadAvatar } = require("../../service/images");
 
@@ -16,6 +17,10 @@ const {
 } = require("../../middlewares/middlewares");
 
 const router = express.Router();
+
+router.get("/verify/:verificationToken", verify);
+
+router.post("/verify");
 
 router.post("/register", validateUserData, signup);
 
