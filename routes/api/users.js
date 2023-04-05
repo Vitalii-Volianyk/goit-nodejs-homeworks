@@ -8,6 +8,7 @@ const {
 	updateSubscription,
 	apdateUserAvatar,
 	verify,
+	reVerify,
 } = require("../../models/users");
 const { uploadAvatar } = require("../../service/images");
 
@@ -20,7 +21,7 @@ const router = express.Router();
 
 router.get("/verify/:verificationToken", verify);
 
-router.post("/verify");
+router.post("/verify", reVerify);
 
 router.post("/register", validateUserData, signup);
 

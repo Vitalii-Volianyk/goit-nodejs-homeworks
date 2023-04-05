@@ -1,5 +1,5 @@
 const db = require("../service/contacts");
-const { catchAsync, dataValidation, validateFavorite } = require("../utils");
+const { catchAsync, dataValidation } = require("../utils");
 /**
  *@param {Object} req
  *@param {Object} res
@@ -57,10 +57,13 @@ const removeContact = catchAsync(async (req, res, next) => {
  *@param {Object} res
  */
 const addContact = catchAsync(async (req, res, next) => {
-	const { error, value } = dataValidation({
-		...req.body,
-		owner: req.user._id.toString(),
-	});
+	const { error, value } = dataValidation(
+		{
+			...req.body,
+			owner: req.user._id.toString(),
+		},
+		["name", "email", "phone", "owner"]
+	);
 	if (error) {
 		return res.status(400).json({ message: error.message });
 	}
@@ -75,7 +78,7 @@ const addContact = catchAsync(async (req, res, next) => {
  *@param {Object} res
  */
 const updateContact = catchAsync(async (req, res, next) => {
-	const { error, value } = dataValidation(req.body, false);
+	const { error, value } = dataValidation(req.body);
 	if (error) {
 		return res.status(400).json({ message: error.message });
 	}
@@ -88,7 +91,7 @@ const updateContact = catchAsync(async (req, res, next) => {
  *@param {Object} res
  */
 const updateStatusContact = catchAsync(async (req, res, next) => {
-	const { error, value } = validateFavorite(req.body);
+	const { error, value } = dataValidation(req.body, ["favorite"]);
 	if (error) {
 		return res.status(400).json({ message: error.message });
 	}

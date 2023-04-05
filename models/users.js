@@ -3,10 +3,11 @@ const bcrypt = require("bcryptjs");
 const gravatar = require("gravatar");
 const jimp = require("jimp");
 const fs = require("fs").promises;
-const { u4 } = require("uuid");
-const { catchAsync, sendEmail } = require("../utils");
+const { v4 } = require("uuid");
+const { catchAsync, sendEmailToken } = require("../utils");
 const { USER_SUBSCRIPTION_ENUM } = require("../utils");
 const Users = require("../schemas/users");
+const { validateUser } = require("../utils");
 
 // Sign jwt helper function
 const signToken = id =>
@@ -27,7 +28,7 @@ const signup = catchAsync(async (req, res) => {
 			protocol: "https",
 			s: "250",
 		}),
-		verificationToken: u4(),
+		verificationToken: v4(),
 	};
 
 	const isExist = await Users.findOne({ email: newUserData.email });
@@ -40,13 +41,7 @@ const signup = catchAsync(async (req, res) => {
 	newUser.token = token;
 	newUser.save();
 
-	const msg = {
-		to: newUser.email,
-		from: "goithw@meta.ua",
-		subject: "Activate user",
-		html: `<p>For verify your email click on link</p><a href="${newUser.verificationToken}" target="blank">${newUser.verificationToken}</>`,
-	};
-	sendEmail(msg);
+	sendEmailToken(newUser.email, newUser.verificationToken);
 
 	res.status(201).json({
 		user: {
@@ -54,7 +49,6 @@ const signup = catchAsync(async (req, res) => {
 			subscription: newUser.subscription,
 			avatarURL: newUser.avatarURL,
 		},
-		token,
 	});
 });
 
@@ -170,8 +164,8 @@ const updateSubscription = catchAsync(async (req, res, next) => {
 });
 
 const verify = catchAsync(async (req, res, next) => {
-	const verificationToken = req.param.verificationToken;
-	const user = await Users.findById(verificationToken);
+	const verificationToken = req.params.verificationToken;
+	const user = await Users.findOne({ verificationToken });
 
 	if (!user) return res.status(404).json({ message: "Not found" });
 	user.verificationToken = null;
@@ -180,6 +174,30 @@ const verify = catchAsync(async (req, res, next) => {
 
 	res.json({
 		message: "Verification successful",
+	});
+});
+const reVerify = catchAsync(async (req, res, next) => {
+	const { error, value } = validateUser(req.body, ["email", "password"]);
+	if (error) {
+		return res.status(400).json({ message: error.message });
+	}
+	const { email } = value;
+	const user = await Users.findOne({ email });
+
+	if (!user) return res.status(404).json({ message: "Not found" });
+	if (user.verify) {
+		return res
+			.status(400)
+			.json({ message: "Verification has already been passed" });
+	}
+	if (!user.verificationToken) {
+		user.verificationToken = v4();
+		user.save();
+	}
+	sendEmailToken(email, user.verificationToken);
+
+	res.json({
+		message: "Verification link resent",
 	});
 });
 
@@ -191,4 +209,5 @@ module.exports = {
 	updateSubscription,
 	apdateUserAvatar,
 	verify,
+	reVerify,
 };
