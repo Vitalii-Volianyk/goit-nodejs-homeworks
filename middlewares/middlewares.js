@@ -25,7 +25,7 @@ const validateId = cathcAsync(async (req, res, next) => {
 });
 
 const validateUserData = cathcAsync(async (req, res, next) => {
-	const { error, value } = validateUser(req.body);
+	const { error, value } = validateUser(req.body, ["email", "password"]);
 	if (error) {
 		return res.status(400).json({ message: error.message });
 	}
