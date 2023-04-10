@@ -5,7 +5,6 @@ const passwordRegex = /^[@!#$%&a-zA-Z\d]{8,}$/;
 const phoneRegex =
 	/\+?\d{2,3}[-\s(]{0,3}\d{2,3}[-\s)]{0,3}\d{2,3}[-\s]?\d{2,3}[-\s]?\d{2,3}/;
 const emailDomain = ["com", "net", "org", "uk"];
-const makeRequired = x => x.required();
 
 const dataValidation = (body, strict = []) => {
 	let schema = Joi.object({
@@ -22,7 +21,7 @@ const dataValidation = (body, strict = []) => {
 		favorite: Joi.boolean(),
 		owner: Joi.string().min(8).max(240),
 	});
-	schema = schema.fork(strict, makeRequired);
+	schema = schema.fork(strict, x => x.required());
 	return schema.validate(body);
 };
 
@@ -41,7 +40,7 @@ const validateUser = (data, strict = []) => {
 				"string.pattern.base": `Password may contain upper and lower case letters, numbers and one of special characters @!#$%& and minimum 8 characters.`,
 			}),
 	});
-	schema = schema.fork(strict, makeRequired);
+	schema = schema.fork(strict, x => x.required());
 	return schema.validate(data);
 };
 
