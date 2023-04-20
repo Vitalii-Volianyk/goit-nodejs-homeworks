@@ -18,13 +18,13 @@ app.use(express.static("public"));
 app.use("/api/users", usersRouter);
 
 app.use("/api/contacts", contactsRouter);
-
+// fdfdfd
 app.use((req, res) => {
-	res.status(404).json({ message: "Not found" });
+	res.status(404).json({message: "Not found"});
 });
 
 app.use((err, req, res, next) => {
-	res.status(500).json({ message: err.message });
+	res.status(500).json({message: err.message});
 });
 
 module.exports = app;
