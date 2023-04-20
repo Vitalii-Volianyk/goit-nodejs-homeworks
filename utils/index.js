@@ -1,6 +1,6 @@
-const catchAsync = require("./catchAsync");
-const { dataValidation, validateUser } = require("./validation");
-const { USER_ROLES_ENUM, USER_SUBSCRIPTION_ENUM } = require("./constants");
+const {catchAsync} = require("./catchAsync");
+const {dataValidation, validateUser} = require("./validation");
+const {USER_ROLES_ENUM, USER_SUBSCRIPTION_ENUM} = require("./constants");
 const sendEmailToken = require("./emailAPI");
 module.exports = {
 	catchAsync,

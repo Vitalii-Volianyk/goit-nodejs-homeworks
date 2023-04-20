@@ -3,16 +3,16 @@ const bcrypt = require("bcryptjs");
 const gravatar = require("gravatar");
 const jimp = require("jimp");
 const fs = require("fs").promises;
-const { v4 } = require("uuid");
-const { catchAsync, sendEmailToken } = require("../utils");
-const { USER_SUBSCRIPTION_ENUM } = require("../utils");
+const {v4} = require("uuid");
+const {catchAsync, sendEmailToken} = require("../utils");
+const {USER_SUBSCRIPTION_ENUM} = require("../utils");
 const Users = require("../schemas/users");
-const { validateUser } = require("../utils");
+const {validateUser} = require("../utils");
 
 // Sign jwt helper function
 const signToken = id =>
-	jwt.sign({ id }, process.env.JWT_SECRET, {
-		expiresIn: process.env.JWT_EXPIRES_IN,
+	jwt.sign({id}, "fbdbngdsvgertet43tdgheyrgrgfdhdhd", {
+		expiresIn: "1d",
 	});
 
 /**
@@ -31,8 +31,8 @@ const signup = catchAsync(async (req, res) => {
 		verificationToken: v4(),
 	};
 
-	const isExist = await Users.findOne({ email: newUserData.email });
-	if (isExist) return res.status(409).json({ message: "Email in use" });
+	const isExist = await Users.findOne({email: newUserData.email});
+	if (isExist) return res.status(409).json({message: "Email in use"});
 
 	newUserData.password = bcrypt.hashSync(newUserData.password, 10);
 	const newUser = await Users.create(newUserData);
@@ -58,28 +58,28 @@ const signup = catchAsync(async (req, res) => {
  * @description Login controller
  */
 const login = catchAsync(async (req, res, next) => {
-	const { email, password } = req.body;
+	const {email, password} = req.body;
 
-	const user = await Users.findOne({ email }).select("+password");
+	const user = await Users.findOne({email}).select("+password");
 
 	if (!user)
-		return res.status(401).json({ message: "Email or password is wrong" });
+		return res.status(401).json({message: "Email or password is wrong"});
 
 	const passwordIsValid = bcrypt.compareSync(password, user.password);
 
 	if (!passwordIsValid)
-		return res.status(401).json({ message: "Email or password is wrong" });
+		return res.status(401).json({message: "Email or password is wrong"});
 
 	if (!user.verify)
 		return res
 			.status(400)
-			.json({ message: "Verification has not been passed" });
+			.json({message: "Verification has not been passed"});
 
 	const token = signToken(user.id);
 	user.token = token;
 	user.save();
 	res.status(200).json({
-		user: { email: user.email, subscription: user.subscription },
+		user: {email: user.email, subscription: user.subscription},
 		token,
 	});
 });
@@ -90,11 +90,11 @@ const login = catchAsync(async (req, res, next) => {
  * @description Logout controller
  */
 const logout = catchAsync(async (req, res, next) => {
-	const { user: _id } = req;
+	const {user: _id} = req;
 
 	const user = await Users.findById(_id).select("+token");
 
-	if (!user) return res.status(401).json({ message: "Not authorized" });
+	if (!user) return res.status(401).json({message: "Not authorized"});
 
 	user.token = null;
 	await user.save();
@@ -110,11 +110,11 @@ const logout = catchAsync(async (req, res, next) => {
  * @description Current user controller
  */
 const getUser = catchAsync(async (req, res, next) => {
-	const { user: _id } = req;
+	const {user: _id} = req;
 
 	const user = await Users.findById(_id);
 
-	if (!user) return res.status(401).json({ message: "Not authorized" });
+	if (!user) return res.status(401).json({message: "Not authorized"});
 
 	res.json({
 		email: user.email,
@@ -128,7 +128,7 @@ const getUser = catchAsync(async (req, res, next) => {
  * @description Avatar upload controller
  */
 const apdateUserAvatar = catchAsync(async (req, res, next) => {
-	const { user, tmpFile } = req;
+	const {user, tmpFile} = req;
 	const image = await jimp.read(tmpFile);
 	await image.resize(250, 250).quality(90);
 	const name = `avatars/user-${Date.now()}.png`;
@@ -147,12 +147,12 @@ const apdateUserAvatar = catchAsync(async (req, res, next) => {
  *@description Update subscription controller
  */
 const updateSubscription = catchAsync(async (req, res, next) => {
-	const { user: _id } = req;
-	const { subscription } = req.body;
+	const {user: _id} = req;
+	const {subscription} = req.body;
 
 	const user = await Users.findById(_id);
 
-	if (!user) return res.status(401).json({ message: "Not authorized" });
+	if (!user) return res.status(401).json({message: "Not authorized"});
 
 	user.subscription = subscription;
 	await user.save();
@@ -165,9 +165,9 @@ const updateSubscription = catchAsync(async (req, res, next) => {
 
 const verify = catchAsync(async (req, res, next) => {
 	const verificationToken = req.params.verificationToken;
-	const user = await Users.findOne({ verificationToken });
+	const user = await Users.findOne({verificationToken});
 
-	if (!user) return res.status(404).json({ message: "Not found" });
+	if (!user) return res.status(404).json({message: "Not found"});
 	user.verificationToken = null;
 	user.verify = true;
 	await user.save();
@@ -177,18 +177,18 @@ const verify = catchAsync(async (req, res, next) => {
 	});
 });
 const reVerify = catchAsync(async (req, res, next) => {
-	const { error, value } = validateUser(req.body, ["email", "password"]);
+	const {error, value} = validateUser(req.body, ["email", "password"]);
 	if (error) {
-		return res.status(400).json({ message: error.message });
+		return res.status(400).json({message: error.message});
 	}
-	const { email } = value;
-	const user = await Users.findOne({ email });
+	const {email} = value;
+	const user = await Users.findOne({email});
 
-	if (!user) return res.status(404).json({ message: "Not found" });
+	if (!user) return res.status(404).json({message: "Not found"});
 	if (user.verify) {
 		return res
 			.status(400)
-			.json({ message: "Verification has already been passed" });
+			.json({message: "Verification has already been passed"});
 	}
 	if (!user.verificationToken) {
 		user.verificationToken = v4();

@@ -1,16 +1,14 @@
-require("dotenv").config({ path: "./.env" });
+require("dotenv").config({path: "./.env"});
 const app = require("./app");
 const mongoose = require("mongoose");
 const connection = mongoose.connect(
-	process.env.MONGO_URL || "mongodb://localhost:27017/contacts"
+	"mongodb+srv://8UWTFoZh2cJxLQHN:8UWTFoZh2cJxLQHN@hw.bnwh5l0.mongodb.net/?retryWrites=true&w=majority"
 );
 
 connection
 	.then(() => {
-		app.listen(process.env.PORT, function () {
-			console.log(
-				`Server running. Use our API on port: ${process.env.PORT}`
-			);
+		app.listen(3000, function () {
+			console.log(`Server running. Use our API on port: 3000`);
 		});
 	})
 	.catch(err => {
